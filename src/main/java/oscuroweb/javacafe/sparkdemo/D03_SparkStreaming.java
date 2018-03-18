@@ -2,6 +2,8 @@ package oscuroweb.javacafe.sparkdemo;
 
 import java.util.Arrays;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -13,7 +15,8 @@ import scala.Tuple2;
 public class D03_SparkStreaming {
 	
 	public static void main(String[] args) throws InterruptedException {
-		
+
+        Logger.getLogger("org").setLevel(Level.ERROR);
 		
 		// Create a local StreamingContext with two 
 		// working thread and batch interval of 1 second
@@ -23,9 +26,8 @@ public class D03_SparkStreaming {
 		
 		
 		JavaStreamingContext sparkStreamingContext = 
-				new JavaStreamingContext(conf, Durations.seconds(10));
+				new JavaStreamingContext(conf, Durations.seconds(1));
 		
-	
 		// Create a DStream that will connect to hostname:port
 		JavaDStream<String> lines = sparkStreamingContext
 				.socketTextStream("localhost", 9999);
@@ -42,7 +44,14 @@ public class D03_SparkStreaming {
 		sparkStreamingContext.start();
 		
 		// Wait for the computation to terminate
-		sparkStreamingContext.awaitTermination();
+		try {
+			sparkStreamingContext.awaitTermination();
+		} catch (InterruptedException e) {
+			System.out.println("Bye!");
+		}
+		
+		sparkStreamingContext.stop();
+
 		
 	}
 
