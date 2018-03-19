@@ -5,6 +5,7 @@ import java.util.Arrays;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -12,11 +13,11 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import scala.Tuple2;
 
-public class D03_SparkStreaming {
-	
+public class D04_SparkStreamingWindow {
+
 	public static void main(String[] args) {
 
-        Logger.getLogger("org").setLevel(Level.ERROR);
+	    Logger.getLogger("org").setLevel(Level.ERROR);
 		
 		// Create a local StreamingContext with two 
 		// working thread and batch interval of 1 second
@@ -26,17 +27,19 @@ public class D03_SparkStreaming {
 		
 		
 		JavaStreamingContext sparkStreamingContext = 
-				new JavaStreamingContext(conf, Durations.seconds(1));
+				new JavaStreamingContext(conf, Durations.seconds(2));
 		
 		// Create a DStream that will connect to hostname:port
 		JavaDStream<String> lines = sparkStreamingContext
-				.socketTextStream("localhost", 9999);
+				.socketTextStream("localhost", 9999, StorageLevel.MEMORY_AND_DISK_SER());
 		
 		// Count each word in each batch
 		JavaPairDStream<String, Integer> wordCounts = lines
 				.flatMap(line -> Arrays.asList(line.split(" ")).iterator())
 				.mapToPair(word -> new Tuple2<String, Integer>(word, 1))
-				.reduceByKey((value1, value2) -> value1 + value2);
+				.reduceByKeyAndWindow((value1, value2) -> value1 + value2,
+						Durations.seconds(10), 
+						Durations.seconds(4));
 		
 		wordCounts.print();
 		
@@ -46,13 +49,10 @@ public class D03_SparkStreaming {
 		// Wait for the computation to terminate
 		try {
 			sparkStreamingContext.awaitTermination();
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 			System.out.println("Bye!");
 		}
 		
 		sparkStreamingContext.stop();
-
-		
 	}
-
 }
