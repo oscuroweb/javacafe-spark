@@ -20,7 +20,7 @@ public class D01_WordCount {
 
     public static void main(String[] args) {
 
-    		// Define Spark Configuration
+    	// Define Spark Configuration
         SparkConf sparkConf = new SparkConf()
         		.setAppName("SparkWordCountDemo");
         
